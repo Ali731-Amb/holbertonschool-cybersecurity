@@ -1,2 +1,2 @@
 #!/bin/bash
-chattr -i "$1" && find "$1" -delete 2> /dev/null
+chattr -i "$1" && rm "$1" 2> /dev/null
