@@ -1,2 +1,2 @@
 #!/bin/bash
-kill -SIGTERM $1
+kill -15 $1
