@@ -1,2 +1,2 @@
 #!/bin/bash
-ss -lnt4 | awk 'NR>1 { print $4 }' | cut -d: -f2 | sort -n
+ss -lnt4 | awk 'NR>1 { split($4, a, ":"); print a[2] }' | sort -n
