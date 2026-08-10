@@ -1,2 +1,2 @@
 #!/bin/bash
-ss -lntp4 | grep ":$1" | awk -F'"' '{print $2}'
+lsof -i :$1 | grep ":$1" | awk -F'"' '{print $2}'
