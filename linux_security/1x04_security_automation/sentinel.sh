@@ -1,2 +1,15 @@
 #!/bin/bash
-. sentinel.conf; check_services() { for svc in "${SERVICES[@]}"; do if pgrep -f "$svc" >/dev/null; then echo "OK: $svc is running"; else eval "$svc" && echo "FIXED: Restarted $svc" || echo "ERROR: Failed to start $svc"; fi; done; }; check_services
+. sentinel.conf
+check_integrity() {
+    for file in "${FILES_TO_WATCH[@]}"; do
+        gold="/var/backups/sentinel/$(basename "$file").gold"
+        hash1=$(md5sum "$file" | awk '{print $1}')
+        hash2=$(md5sum "$gold" | awk '{print $1}')
+        if [ "$hash1" = "$hash2" ]; then
+            echo "OK: $file integrity verified"
+        else
+            cp "$gold" "$file"; echo "FIXED: Restored $file"
+        fi
+    done
+}
+check_integrity
