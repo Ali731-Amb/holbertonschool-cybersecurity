@@ -1,2 +1,2 @@
 #!/bin/bash
-[ -f sentinel.conf ] && . sentinel.conf && [ -n "$SERVICES" ] && [ -n "$FILES_TO_WATCH" ] || { echo "Error: config file is missing" >&2 ; exit 1 ;  }
+. sentinel.conf; check_services() { for svc in "${SERVICES[@]}"; do if pgrep -f "$svc" >/dev/null; then echo "OK: $svc is running"; else eval "$svc" && echo "FIXED: Restarted $svc" || echo "ERROR: Failed to start $svc"; fi; done; }; check_services
