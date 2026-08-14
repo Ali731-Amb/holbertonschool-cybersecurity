@@ -18,3 +18,24 @@ init_log (){
 	chown root:root "$LOG_FILE"
 	chmod 600 "$LOG_FILE"
 }
+
+update_system() {
+    export DEBIAN_FRONTEND=noninteractive
+
+    apt-get update -qq
+    apt-get upgrade -y -qq
+
+    log "system" "packages" "changed" "Repositories updated and packages upgraded"
+}
+
+remove_bloatware() {
+    apt-get purge -y -qq telnet ftp netcat-traditional || true
+
+    log "system" "packages" "changed" "Insecure packages removed"
+}
+
+install_security_tools() {
+    apt-get install -y -qq auditd fail2ban
+
+    log "system" "packages" "changed" "Security tools installed"
+}

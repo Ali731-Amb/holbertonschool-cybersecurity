@@ -7,14 +7,24 @@ if [[ "$EUID" -ne 0 ]]; then
 fi
 
 # Chargement de la configuration
-source config/harden.cfg
-# Chargement des bibliothèques
-source lib/system.sh
-source lib/network.sh
-source lib/ssh.sh
-source lib/identity.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$SCRIPT_DIR/config/harden.cfg"
+source "$SCRIPT_DIR/lib/system.sh"
+source "$SCRIPT_DIR/lib/network.sh"
+source "$SCRIPT_DIR/lib/ssh.sh"
+source "$SCRIPT_DIR/lib/identity.sh"
 
 # Initialisation du fichier de log
 init_log
 
 log "framework" "$LOG_FILE" "initialized" "Hardening framework initialized"
+
+configure_firewall
+harden_kernel
+update_system
+remove_bloatware
+install_security_tools
+harden_password_policy
+lock_root_account
+remove_unauthorized_users
