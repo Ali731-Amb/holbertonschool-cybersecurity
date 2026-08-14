@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # service inutile déactivé, permissions sur fichiers sensible, banniere légale, modules noyau bloqués. 
 #pas de chemin ou valeur en dur 
 

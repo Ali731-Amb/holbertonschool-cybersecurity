@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 #ignorer les redirection ICMP, deactiver le routage ip, activer la protection anti spoonfing, controle réseau qui ne passe pas par le firewall
 configure_firewall() {
     mkdir -p "$(dirname "$FIREWALL_RULES")"

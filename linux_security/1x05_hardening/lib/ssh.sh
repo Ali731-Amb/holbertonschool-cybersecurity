@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # configure le demon sshd : permitRootLoginno, changement de port, white list pour users. 
 set_ssh_directive() {
     local key="$1"

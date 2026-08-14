@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Generic idempotent directive setter.
 # $1 = file, $2 = key, $3 = value, $4 = separator (e.g. " " or " = ")
 set_directive() {
