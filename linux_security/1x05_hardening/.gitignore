@@ -1,0 +1,13 @@
+# Editor and OS noise
+*~
+*.swp
+.DS_Store
+.idea/
+.vscode/
+
+# Local scratch and test output
+run1.txt
+run2.txt
+*.log
+
+# audit_report.txt is NOT ignored: the task statement lists it as a deliverable.

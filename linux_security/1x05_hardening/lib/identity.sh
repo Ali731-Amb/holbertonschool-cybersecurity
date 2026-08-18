@@ -39,14 +39,38 @@ lock_root_account() {
 
 remove_unauthorized_users() {
     # I-03 — remove non-administrative human accounts.
-    local user uid
+    local user uid groups
+    local -a candidates=() removed=()
 
+    # The list is built before any deletion: userdel rewrites /etc/passwd,
+    # which this loop is reading.
     while IFS=: read -r user _ uid _; do
-        [[ "$uid" -le 1000 || "$uid" -ge 65000 ]] && continue
-        id -nG "$user" | grep -qwE "sudo|wheel" && continue
-        [[ "$user" == "$SUDO_USER" ]] && continue
+        (( uid > 1000 && uid < 65000 )) || continue
+        [[ "$user" == "${SUDO_USER:-}" ]] && continue
 
-        userdel -r "$user" 2>/dev/null || true
-        log "identity" "$user" "changed" "Unauthorized user removed"
+        groups="$(id -nG "$user" 2>/dev/null || true)"
+        if grep -qwE 'sudo|wheel|adm' <<<"$groups"; then
+            log "identity" "$user" "skipped" "administrative account"
+            continue
+        fi
+
+        candidates+=("$user")
     done < /etc/passwd
+
+    for user in "${candidates[@]}"; do
+        if userdel -r "$user" &>/dev/null; then
+            removed+=("$user")
+            log "identity" "$user" "changed" "Account removed"
+        else
+            # Non-critical: reported, but hardening continues.
+            report_error "Failed to remove user: $user"
+            log "identity" "$user" "failed" "userdel returned an error"
+        fi
+    done
+
+    if (( ${#removed[@]} > 0 )); then
+        report_info "${#removed[@]} unauthorized users removed: $(_join "${removed[@]}")."
+    else
+        report_info "0 unauthorized users removed."
+    fi
 }

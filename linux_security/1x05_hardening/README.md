@@ -309,3 +309,110 @@ principle: security must rest on control mechanisms, not on the secrecy of the d
 
 Moving the SSH port reduces automated scan noise but **is not a security measure**: it
 is security through obscurity, and a port scan defeats it in seconds.
+
+# Section to append to README.md — Task 2
+
+## Task 2 — Audit & Verification
+
+A security tool that works silently is dangerous. Auditors need proof, operations
+needs visibility. At the end of every run, `harden.sh` writes a human-readable
+compliance report to `audit_report.txt`.
+
+### Output location
+
+The report is written to the **current working directory** — the directory the
+operator runs the command from — not to the directory where the script is stored:
+
+```bash
+RUN_DIR="$PWD"                              # frozen before any cd
+REPORT_FILE="$RUN_DIR/audit_report.txt"
+```
+
+`$SCRIPT_DIR` (where the script lives) and `$PWD` (where it was launched from) are
+two different things. Only `$SCRIPT_DIR` is used to `source` the libraries.
+
+### Two outputs, two audiences
+
+| Output | Format | Reader |
+|---|---|---|
+| `$LOG_FILE` | JSON, one object per event | machines: SIEM, log shipper |
+| `audit_report.txt` | plain text, `[INFO]/[WARN]/[ERROR]` | humans: auditor, operator |
+
+The same reasoning already applied to `harden.cfg` (read by `source`) versus
+`firewall.rules` (read by a line parser): one consumer, one format.
+
+### How the information travels
+
+Each hardening function records what it did in three accumulator arrays through
+the helpers `report_info`, `report_warn` and `report_error`. A single function,
+`generate_report()`, formats them and writes the file. Only one function ever
+opens the report, so the format lives in exactly one place.
+
+Package counts come from a `dpkg -s` test performed **before** acting: the script
+only reports what actually changed, which is also what makes those functions
+idempotent.
+
+### Guaranteed generation: the EXIT trap
+
+```bash
+on_exit() {
+    local rc=$?
+    generate_report "$rc"
+    exit "$rc"
+}
+trap on_exit EXIT
+```
+
+With `set -e`, a critical failure kills the script immediately. Without a trap the
+report would never be written on failure, and `COMPLIANCE STATUS: FAIL` could
+never be printed — the worst case, a half-hardened server, would be the one case
+with no evidence.
+
+`EXIT` fires on every exit path: normal end, explicit `exit`, or death caused by
+`set -e`. `local rc=$?` must be the first line of the handler, because any other
+command would overwrite `$?`. `exit "$rc"` preserves the original exit code, so a
+failure is never silently turned into a success.
+
+Note the deliberate limit: the `source` statements run *before* the trap is
+installed, so a missing library or config file aborts loudly with no report. A
+bootstrap failure is not a compliance failure and must not be dressed up as one.
+
+### Compliance status
+
+`PASS` requires both: an exit code of 0, and an empty `REPORT_ERROR` array.
+Any recorded error, even a non-critical one, downgrades the run to `FAIL`.
+
+### Sample output
+
+```
+===============================================
+ HARDENING AUDIT REPORT - 2026-08-18 14:32:01
+===============================================
+
+[INFO] Hardening procedure completed successfully.
+[INFO] SSH configured on port 2222.
+[INFO] Firewall policy created: /etc/hardening/firewall.rules
+[INFO] Installed: auditd, fail2ban.
+[INFO] Removed: telnet, ftp, netcat-traditional.
+[INFO] 3 unauthorized users removed: guest, temp, test.
+[WARN] Package updates skipped (already up to date).
+
+===============================================
+ COMPLIANCE STATUS: PASS
+===============================================
+```
+
+On a second consecutive run the report shows `Installed: none`, `Removed: none`
+and `0 unauthorized users removed`. Those lines are not noise: they are the
+evidence of idempotence.
+
+### Testing
+
+```bash
+bash tests/test_report.sh      # no root, no system change: 15 assertions
+shellcheck harden.sh lib/*.sh  # run locally, the lab VM has no shellcheck
+```
+
+`tests/test_report.sh` sources `lib/system.sh` to obtain the functions only,
+fills the accumulators by hand and asserts on the generated file. It covers the
+nominal run, a recorded error, an interrupted script and a no-change second run.

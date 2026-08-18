@@ -20,6 +20,10 @@ configure_firewall() {
     chmod 600 "$FIREWALL_RULES"
 
     log "network" "$FIREWALL_RULES" "changed" "Firewall policy written"
+        local ports="$SSH_PORT"
+    [[ "${ALLOW_HTTP:-false}"  == "true" ]] && ports+=", 80"
+    [[ "${ALLOW_HTTPS:-false}" == "true" ]] && ports+=", 443"
+    report_info "Firewall policy created: $FIREWALL_RULES (ports $ports ALLOWED)."
 }
 
 set_sysctl_param() {
@@ -36,4 +40,5 @@ harden_kernel() {
 	set_sysctl_param net.ipv4.conf.all.accept_redirects "0"
 	set_sysctl_param net.ipv4.icmp_echo_ignore_all "1"
     log "network" "$SYSCTL_FILE" "changed" "Kernel parameters hardened"
+    report_info "Kernel parameters hardened: ip_forward=0, accept_redirects=0, icmp_echo_ignore_all=1."
 }
