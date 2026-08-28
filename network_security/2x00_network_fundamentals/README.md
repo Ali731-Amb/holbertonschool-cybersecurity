@@ -68,11 +68,60 @@ Il n'existe que neuf valeurs possibles pour un octet de masque :
 
 ### 1. The Encoder (`1-dec2bin.sh`)
 
-Automatisation de la conversion décimale → binaire 8 bits.
-
+### 1. The Encoder (`1-dec2bin.sh`)
+ 
+Conversion décimale → binaire 8 bits, complétée par des zéros à gauche.
+ 
 ```bash
 $ ./1-dec2bin.sh 10
 00001010
+```
+ 
+`bc` lit sur l'entrée standard, d'où le pipe ; `obase=2` fixe la base de sortie. `printf "%08d"`
+impose une largeur de 8 caractères. À noter : `printf` traite la sortie de `bc` comme un décimal —
+le procédé ne tient que parce que le domaine est borné à 0-255.
+ 
+### 2. The Decoder (`2-bin2dec.sh`)
+ 
+Conversion binaire → décimal.
+ 
+```bash
+$ ./2-bin2dec.sh 11000000
+192
+```
+ 
+Seule `ibase` est modifiée ; `obase` reste à sa valeur par défaut (10). Aucune contrainte de
+largeur en sortie, donc pas de mise en forme. Les zéros de tête sont sans effet : `bc` lit une
+valeur, pas une chaîne.
+ 
+### 3. The IP Parser (`3-ip2bin.sh`)
+ 
+Affichage d'une adresse IPv4 sur 32 bits.
+ 
+```bash
+$ ./3-ip2bin.sh 192.168.1.1
+11000000.10101000.00000001.00000001
+```
+ 
+L'expansion `${1//./;}` transforme l'adresse en une liste d'expressions que `bc` évalue en un
+seul appel. Appliqué à un masque, le script permet de vérifier visuellement sa contiguïté.
+ 
+### 4. The Mask Generator (`4-cidr2mask.sh`)
+ 
+Conversion d'un préfixe CIDR en masque décimal pointé.
+ 
+```bash
+$ ./4-cidr2mask.sh 27
+255.255.255.224
+```
+ 
+Le masque est traité comme un **entier 32 bits**, pas comme une chaîne. `0xFFFFFFFF` représente
+un `/32` ; le décaler de `32 - n` vers la gauche produit exactement `n` bits de réseau suivis de
+zéros. Chaque octet est ensuite extrait par un décalage suivi d'un `& 255`, qui isole 8 bits
+(`255` = `11111111`).
+ 
+C'est la représentation qu'utilisent réellement routeurs et pare-feux : le Network ID s'obtient
+par `IP & masque`.
 ```
 
 *(en cours)*
