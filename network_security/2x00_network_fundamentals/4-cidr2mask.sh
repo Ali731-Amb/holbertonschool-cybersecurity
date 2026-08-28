@@ -1,2 +1,2 @@
 #!/bin/bash
-b=$(printf '1%.0s' $(seq 1 $1); printf '0%.0s' $(seq 1 $((32-$1)))); printf "%d.%d.%d.%d\n" $(echo "ibase=2; ${b:0:8}; ${b:8:8}; ${b:16:8}; ${b:24:8}" | bc)
+m=$(( (0xFFFFFFFF << (32-$1)) & 0xFFFFFFFF )); printf "%d.%d.%d.%d\n" $((m>>24&255)) $((m>>16&255)) $((m>>8&255)) $((m&255))
