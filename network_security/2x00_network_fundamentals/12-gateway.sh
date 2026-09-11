@@ -1,2 +1,2 @@
 #!/bin/bash
-ip route | grep "default" |  awk '{print $3}'
+tracepath "$1" | grep -oE '^ *[0-9]+:' | tail -n 1 | cut -d: -f1
