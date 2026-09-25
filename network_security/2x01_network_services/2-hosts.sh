@@ -1,2 +1,2 @@
 #!/bin/bash
-grep "^127." /etc/hosts | awk '{print $1}'
+grep -w "localhost" /etc/hosts | grep -v ":" | awk '{print $1}' | head -n1
